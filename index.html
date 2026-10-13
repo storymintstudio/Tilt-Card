@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Holo Tilt Card</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07080d;--ink:#eafff6;--mint:#5ef2c0;--mute:#8a95a8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(circle at 50% 35%,#101826,var(--bg) 65%);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;display:grid;place-items:center;overflow:hidden}
+.stage{perspective:900px;display:grid;place-items:center;gap:28px;touch-action:none}
+.card{--rx:0deg;--ry:0deg;--mx:50%;--my:50%;--hue:0deg;
+ width:min(78vw,320px);aspect-ratio:3/4.2;border-radius:22px;position:relative;
+ transform:rotateX(var(--rx)) rotateY(var(--ry));transform-style:preserve-3d;
+ background:linear-gradient(160deg,#0f1a22,#0a0f16);
+ box-shadow:0 30px 60px -20px rgba(94,242,192,.35),0 0 0 1px rgba(255,255,255,.08) inset;
+ overflow:hidden;transition:transform .12s ease-out;cursor:grab}
+.card.rest{transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.foil{position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:.55;
+ background:repeating-linear-gradient(115deg,#ff6ec7 0,#ffe66e 8%,#5ef2c0 16%,#6ea8ff 24%,#c06eff 32%);
+ background-size:300% 300%;background-position:var(--mx) var(--my);filter:hue-rotate(var(--hue)) saturate(1.2)}
+.glare{position:absolute;inset:0;background:radial-gradient(circle at var(--mx) var(--my),rgba(255,255,255,.55),transparent 45%);mix-blend-mode:overlay}
+.grid{position:absolute;inset:0;opacity:.25;background:linear-gradient(rgba(255,255,255,.12) 1px,transparent 1px) 0 0/100% 28px,linear-gradient(90deg,rgba(255,255,255,.12) 1px,transparent 1px) 0 0/28px 100%}
+.body{position:absolute;inset:0;padding:22px;display:flex;flex-direction:column;justify-content:space-between;transform:translateZ(40px)}
+.chip{width:46px;height:34px;border-radius:7px;background:linear-gradient(135deg,#ffe9a8,#c9a24a);box-shadow:0 0 0 1px rgba(0,0,0,.25) inset}
+h1{font-family:'Syne',system-ui,sans-serif;font-weight:800;font-size:clamp(26px,8vw,34px);line-height:1;margin:0;letter-spacing:-.02em;white-space:nowrap}
+.sub{color:var(--mute);font-size:14px;margin-top:10px}
+.row{display:flex;justify-content:space-between;align-items:end;font-size:13px;color:var(--mint)}
+.hint{color:var(--mute);font-size:13px}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="card rest" id="card" tabindex="0" aria-label="Holographic tilt card">
+    <div class="grid"></div><div class="foil"></div><div class="glare"></div>
+    <div class="body">
+      <div class="chip"></div>
+      <div><h1>Storymint<br>Studio</h1><div class="sub">Frontend, minus the boring.</div></div>
+      <div class="row"><span>@storymint.studio</span><span>No. 001</span></div>
+    </div>
+  </div>
+  <div class="hint">Drag or tilt your phone</div>
+</div>
+<script>
+(function(){
+  var card=document.getElementById('card'),stage=document.getElementById('stage');
+  var active=false,t=0,reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  function set(x,y){ // x,y in 0..1 inside card
+    var ry=(x-.5)*28, rx=(.5-y)*28;
+    card.style.setProperty('--rx',rx+'deg');card.style.setProperty('--ry',ry+'deg');
+    card.style.setProperty('--mx',(x*100)+'%');card.style.setProperty('--my',(y*100)+'%');
+    card.style.setProperty('--hue',((x+y)*90)+'deg');
+  }
+  function pos(e){var r=card.getBoundingClientRect();return[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]}
+  stage.addEventListener('pointerdown',function(e){active=true;card.classList.remove('rest');var p=pos(e);set(p[0],p[1])});
+  window.addEventListener('pointermove',function(e){if(active||e.pointerType==='mouse'){active=true;card.classList.remove('rest');var p=pos(e);set(Math.min(1,Math.max(0,p[0])),Math.min(1,Math.max(0,p[1])))}});
+  window.addEventListener('pointerup',function(){active=false;card.classList.add('rest')});
+  document.addEventListener('mouseleave',function(){active=false;card.classList.add('rest')});
+  window.addEventListener('deviceorientation',function(e){
+    if(e.gamma==null)return;active=true;card.classList.remove('rest');
+    set(.5+Math.max(-30,Math.min(30,e.gamma))/60,.5+Math.max(-30,Math.min(30,(e.beta||0)-45))/60);
+  });
+  // idle auto-sway so screen recordings always look alive
+  function idle(){
+    if(!active&&!reduce){t+=.012;card.classList.remove('rest');set(.5+Math.sin(t)*.35,.5+Math.cos(t*.8)*.3)}
+    requestAnimationFrame(idle);
+  }
+  idle();
+})();
+</script>
+</body>
+</html>
